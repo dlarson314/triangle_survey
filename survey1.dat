@@ -1,0 +1,67 @@
+<control>
+
+# Labels for points making triangles, 
+# counter-clockwise as seen from above,
+# and in the order they will be computed.
+
+A B C
+C B D
+C D E
+C E F
+F E G
+F G H
+F H I
+I H J
+I J K
+I K L
+L K M
+L M N
+L N O
+O N P
+O P Q
+O Q A_close
+A_close Q R
+A_close R B_close
+
+# Measurements in feet.  Order is arbitrary, but should probably be in the order
+# the distances were measured.
+
+A B = 100
+B C = 100
+A C = 100
+B D = 100
+C D = 100
+D E = 100
+C E = 100
+C F = 100 
+E F = 100
+E G = 100
+F G = 100
+G H = 100
+F H = 100
+H I = 100
+H J = 100
+F I = 100
+I J = 100
+J K = 100
+I K = 100
+I L = 100
+K M = 100
+L K = 100
+L M = 100
+L N = 100
+L O = 100
+M N = 100
+O N = 100
+O P = 100
+N P = 100
+P Q = 100
+O Q = 100
+O A_close = 100
+Q A_close = 100
+Q R = 100
+A_close R = 100
+A_close B_close = 100
+R B_close = 100
+
+</control>

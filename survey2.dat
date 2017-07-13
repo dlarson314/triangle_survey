@@ -1,0 +1,67 @@
+<control>
+
+# Labels for points making triangles, 
+# counter-clockwise as seen from above,
+# and in the order they will be computed.
+
+A B C
+C B D
+C D E
+C E F
+F E G
+F G H
+F H I
+I H J
+I J K
+I K L
+L K M
+L M N
+L N O
+O N P
+O P Q
+O Q A_close
+A_close Q R
+A_close R B_close
+
+# Measurements in feet.  Order is arbitrary, but should probably be in the order
+# the distances were measured.
+
+A B = 101.338
+B C = 109.385
+A C = 100.289
+B D = 101.368
+C D = 97.672
+D E = 100.313
+C E = 98.363
+C F = 102.345 
+E F = 101.011
+E G = 99.144
+F G = 97.397
+G H = 100.603
+F H = 102.009
+H I = 99.719
+H J = 97.760
+F I = 98.303
+I J = 104.790
+J K = 102.448
+I K = 97.051
+I L = 105.218
+K M = 96.593
+L K = 100.821
+L M = 102.223
+L N = 99.628
+L O = 96.889
+M N = 98.759
+O N = 100.832
+O P = 98.599
+N P = 100.425
+P Q = 102.064
+O Q = 100.497
+O A_close = 98.885
+Q A_close = 96.199
+Q R = 105.389
+A_close R = 100.162
+A_close B_close = 100.596
+R B_close = 101.444
+
+</control>
