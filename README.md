@@ -42,7 +42,10 @@ point labels.  This is necessary to get the original configuration of triangles,
 which lets you estimate error in the survey, as well as provide an initial
 condition for the least squares fitting.  The triangle points are labeled
 counterclockwise, as seen from above the Earth looking downward (as one would
-look at a map).
+look at a map).  
+
+Triangles should be adjacent, with only one new point being introduced in each
+triangle.  That makes my initial point-solving code work.
 
 Point labels can be any string of non-whitespace characters.  I used mostly
 single letters for simplicity and ease of labeling on maps, but one could also
@@ -54,6 +57,10 @@ the measured distances between points.  A line like:
 means the distance between points A and B is 100 feet.  Units are arbitrary, but
 they should be consistent throughout the file.
 
+Distances for every edge of every triangle must be measured and included in the
+file.  Other distances that are not edges of triangles may also be included, and
+will be considered in the final linear least squares solution.
+
 ## Other ## 
 
 The user interface still involves hand editing triangle_survey.py.  I'll fix
@@ -63,5 +70,10 @@ This survey program will assume all measurements are horizontal, and none are
 made with the tape measure sloping upward or downward, such as may happen if the
 surveyed area is on a hill.
 
+## To Do ##
 
+[ ] Make a command line user interface.
+[ ] Allow user input of distance error estimates.
+[ ] Allow creation of non-conrol points on map after control points are computed
+    and optimized.
 
