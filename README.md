@@ -44,16 +44,24 @@ condition for the least squares fitting.  The triangle points are labeled
 counterclockwise, as seen from above the Earth looking downward (as one would
 look at a map).
 
-Point labels can be any string of non-whitespace characters.  I used letters for
-simplicity and ease of labeling on maps, but one could also use
-NorthwestCornerOfFencePost17 if desired.
+Point labels can be any string of non-whitespace characters.  I used mostly
+single letters for simplicity and ease of labeling on maps, but one could also
+use NorthwestCornerOfFencePost17 if desired.
 
 After listing the triangles (or interspersed with listing the triangles), are
 the measured distances between points.  A line like:
-A B = 100.0
+    A B = 100.0
 means the distance between points A and B is 100 feet.  Units are arbitrary, but
 they should be consistent throughout the file.
+
+## Other ## 
+
+The user interface still involves hand editing triangle_survey.py.  I'll fix
+that eventually.
 
 This survey program will assume all measurements are horizontal, and none are
 made with the tape measure sloping upward or downward, such as may happen if the
 surveyed area is on a hill.
+
+
+
