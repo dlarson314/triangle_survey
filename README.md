@@ -9,3 +9,8 @@ equilateral triangles to make the loop, and give each of the edges 3% error in
 length measurements.
 ![Uncorrected survey](survey2_uncorrected.png)
 
+Then, I require A and A_close to be the same point, and I require B and B_close
+to be the same point, and I use scipy.optimize.leastsq to find a least squares
+solution for all the point locations.  This gives the following result:
+![Uncorrected survey](survey2_both.png)
+
