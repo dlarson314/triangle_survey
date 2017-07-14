@@ -72,8 +72,8 @@ surveyed area is on a hill.
 
 ## To Do ##
 
-[ ] Make a command line user interface.
-[ ] Allow user input of distance error estimates.
-[ ] Allow creation of non-conrol points on map after control points are computed
-    and optimized.
+- [ ] Make a command line user interface.
+- [ ] Allow user input of distance error estimates.
+- [ ] Allow creation of non-conrol points on map after control points are computed
+      and optimized.
 
