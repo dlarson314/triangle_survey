@@ -53,6 +53,29 @@ def solve_triangle(p1, p2, d23, d31):
     return p3
 
 
+def angle_between(p1, p2, p3, p4):
+    """ 
+    p1 --------- p2
+    p3 
+      \
+       \
+        \
+         \
+          p4
+
+
+    Provides the rotation angle in degrees needed to rotate the vector from 
+    p1 to p2 to the vector from p3 to p4.
+    """
+    vec1 = p2 - p1
+    vec2 = p4 - p3
+
+    angle1 = np.arctan2(vec1[1], vec1[0])
+    angle2 = np.arctan2(vec2[1], vec2[0])
+
+    return (angle2 - angle1) * 180 / np.pi
+
+
 def add_triangle(points, triangle):
     triple = deque(triangle[0:3])
     sides = deque(triangle[3:6])
@@ -88,6 +111,8 @@ class TriangleSurvey:
         self.triangles = []   # List of triangle point labels
         self.points = {}      # Hash of point label locations
         self.constraints = {} # Hash of point-point distances
+        self.current_fractional_error = 0.03
+        self.current_absolute_error = 0.01
 
     def constraint_label(self, a, b):
         pair = [a, b]
@@ -109,19 +134,57 @@ class TriangleSurvey:
             if re.search('</control>', line):
                 # Don't do anything after the end of the control. 
                 break
+            if re.search('^FRACTIONAL ERROR', line):
+                # Set the current fractional error
+                group = line.strip().split()
+                self.current_fractional_error = float(group[4])
+                continue 
+            if re.search('^ABSOLUTE ERROR', line):
+                # Set the current absolute error
+                group = line.strip().split()
+                self.current_absolute_error = float(group[4])
+                continue 
 
             group = line.strip().split()
             print group
 
             if len(group) == 3:
-                self.triangles.append(group)
+                self.triangles.append(tuple(group))
 
             if len(group) == 4:
                 assert(group[2] == '=')
                 pair = self.constraint_label(group[0], group[1])
                 print pair
                 length = float(group[3])
-                self.constraints[pair] = (length, 0.03 * length + 0.01)
+                self.constraints[pair] = (length, 
+                    self.current_fractional_error * length + self.current_absolute_error)
+
+            if len(group) == 5:
+                assert(group[2] == '=')
+                pair = self.constraint_label(group[0], group[1])
+                print pair
+                length = float(group[3])
+                error = float(group[4])
+                self.constraints[pair] = (length, error)
+
+            #if len(group) == 5:
+            #    self.triangles.append(group[0:3])
+            #    pair = self.constraint_label(group[1], group[2])
+            #    self.constraints[pair] = (length, 
+            #        self.current_fractional_error * length + self.current_absolute_error)
+
+    def save(self, filename):
+        with open(filename, 'w') as f:
+            for t in self.triangles:
+                f.write('%s %s %s\n' % t)
+            f.write('\n')
+            keys = self.constraints.keys()
+            keys.sort()
+            for k in keys:
+                print k
+                c = self.constraints[k]
+                f.write('%s %s = %g %g\n' % (k[0], k[1], c[0], c[1]))
+            f.close()
 
     def get_constraint(self, label1, label2):
         pair = self.constraint_label(label1, label2)
@@ -171,18 +234,35 @@ class TriangleSurvey:
         for t in self.triangles:
             self.add_triangle(t)
 
-    def plot_triangles(self, color='b'):
+    def plot_triangles(self, color='b', dx=5, dy=5):
+        for c in self.constraints: 
+            p0 = self.points[c[0]]
+            p1 = self.points[c[1]]
+            xy = np.vstack((p0, p1))
+            mpl.plot(xy[:,0], xy[:,1], color=(0.5,0.5,0.5))
+             
         for t in self.triangles:
             p0 = self.points[t[0]]
             p1 = self.points[t[1]]
             p2 = self.points[t[2]]
             xy = np.vstack((p0, p1, p2, p0))
             mpl.plot(xy[:,0], xy[:,1], color)
-            dx = 5
-            dy = 5
             mpl.text(p0[0]+dx, p0[1]+dy, t[0])
             mpl.text(p1[0]+dx, p1[1]+dy, t[1])
             mpl.text(p2[0]+dx, p2[1]+dy, t[2])
+
+
+    def plot_points(self, color='+b', dx=5, dy=5):
+        point_set = set() 
+        for t in self.triangles:
+            for i in range(3):
+                point_set.add(t[i])
+
+        for p in point_set:
+            p0 = self.points[p]
+            mpl.plot(p0[0], p0[1], color)
+            mpl.text(p0[0]+dx, p0[1]+dy, p)
+
 
     def calculate_closure(self, point_list):
         total = 0
@@ -217,7 +297,65 @@ class TriangleSurvey:
 
         self.new_triangles = [(relabel(t[0]), relabel(t[1]), relabel(t[2])) for t in self.triangles]
 
-    def optimize_triangles(self):
+    def transform_affine(self, fixed):
+        """
+        Transforms all points so that the fixed points are close to their
+        desired locations.
+        fixed = [('name', x1, y1), ('name2', x2, y2)]
+        """
+        if len(fixed) == 2:
+            label0 = fixed[0][0]
+            label1 = fixed[1][0]
+
+            p1 = self.points[label0]
+            p2 = self.points[label1]
+            p3 = np.array(fixed[0][1:3])
+            p4 = np.array(fixed[1][1:3])
+
+            theta = angle_between(p1, p2, p3, p4) * np.pi / 180
+
+            scale = dist(p3, p4) / dist(p1, p2)
+            s = np.sin(theta)
+            c = np.cos(theta)
+            rot = np.array([[c, -s],
+                            [s, c]]) * scale
+
+            labels = self.points.keys()
+            for label in labels:
+                xy = self.points[label]
+                xy2 = np.dot(rot, xy - p1) + p3
+                self.points[label] = xy2
+
+        elif len(fixed) > 2:
+            mat = np.zeros((2*len(fixed), 6))
+            vec = np.zeros(2*len(fixed))
+            for i, f in enumerate(fixed):
+                label = f[0]
+                mat[2*i,0] = self.points[label][0]
+                mat[2*i,1] = self.points[label][1] 
+                mat[2*i+1,2] = self.points[label][0] 
+                mat[2*i+1,3] = self.points[label][1] 
+                mat[2*i,4] = 1 
+                mat[2*i+1,5] = 1 
+
+                vec[2*i] = f[1]
+                vec[2*i+1] = f[2]
+            
+            coeff, resid, rank, s = np.linalg.lstsq(mat, vec)
+            a, b, c, d, e, f = tuple(coeff)
+
+            labels = self.points.keys()
+            for label in labels:
+                x = self.points[label][0]
+                y = self.points[label][1]
+
+                x2 = a * x + b * y + e
+                y2 = c * x + d * y + f
+                self.points[label][0] = x2
+                self.points[label][1] = y2
+             
+
+    def optimize_triangles(self, fixed=None):
         #point_labels = self.points.keys()
         #point_labels.sort()
 
@@ -230,13 +368,21 @@ class TriangleSurvey:
         for c in con_labels:
             point_labels.add(c[0])
             point_labels.add(c[1])
+
+        dof_subtract = 1
+        if fixed:
+            dof_subtract = 0
+            for fix in fixed:
+                point_labels.remove(fix[0])
+
         point_labels = list(point_labels)
         point_labels.sort()
+        point_labels = point_labels[dof_subtract:]
 
-        x0 = np.zeros(2*len(point_labels) - 2, dtype='double')
+        x0 = np.zeros(2*len(point_labels), dtype='double')
         i = 0
-        # skip the first two points
-        for p in point_labels[1:]:
+        # skip the first point
+        for p in point_labels:
             x0[i] = self.points[p][0]
             x0[i+1] = self.points[p][1]
             i += 2
@@ -246,11 +392,15 @@ class TriangleSurvey:
             points = {}
             points[point_labels[0]] = self.points[point_labels[0]]
             #points[point_labels[1]] = self.points[point_labels[1]]
-            for p in point_labels[1:]:
+            if fixed:
+                for fix in fixed:
+                    points[fix[0]] = np.array((fix[1], fix[2]))
+            for p in point_labels[dof_subtract:]:
                 points[p] = x[i:i+2]
                 i += 2
             return points
             
+        # Function to optimize
         def func(x): 
             points = x2points(x)
             
