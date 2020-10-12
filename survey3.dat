@@ -1,26 +1,42 @@
 <control>
 
-# Labels for points making triangles, 
+FRACTIONAL ERROR = 0.001
+ABSOLUTE ERROR = 0.01
+
+# Labels for points making triangles,
 # counter-clockwise as seen from above,
 # and in the order they will be computed.
 
 A B C
-B C D
+A B D
 
 # Measurements in arbitrary units of length.  Units must be consistent
 # throughout the file. Order of lines is arbitrary, but should probably be in
 # the order the distances were measured.
 
 A B = 100
-B C = 100
-A C = 150
-B D = 140
+B C = 141
+A C = 100
+B D = 100
 C D = 100
-A D = 100
+A D = 142
 
 # Optionally consider these points as a separate group for computing additional
 # chi2 error statistics
 
 chi2 A B C D
+
+# ----------------------------------------------------------------------
+
+C D E
+C D F
+
+C E = 100
+C F = 142
+D E = 141
+D F = 100
+E F = 100
+
+chi2 C D E F
 
 </control>
