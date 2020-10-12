@@ -113,6 +113,7 @@ class TriangleSurvey:
         self.constraints = {} # Hash of point-point distances
         self.current_fractional_error = 0.03
         self.current_absolute_error = 0.01
+        self.chi2groups = []
 
     def constraint_label(self, a, b):
         pair = [a, b]
@@ -132,7 +133,7 @@ class TriangleSurvey:
                 # Blank line
                 continue
             if re.search('</control>', line):
-                # Don't do anything after the end of the control. 
+                # Don't do anything after the end of the control.
                 break
             if re.search('^FRACTIONAL ERROR', line):
                 # Set the current fractional error
@@ -140,10 +141,17 @@ class TriangleSurvey:
                 self.current_fractional_error = float(group[3])
                 continue 
             if re.search('^ABSOLUTE ERROR', line):
-                # Set the current absolute error
+                # Set the current absolute error.  Units are the same as the
+                # units for distance.
                 group = line.strip().split()
                 self.current_absolute_error = float(group[3])
                 continue 
+            if re.search('^chi2 ', line):
+                # Group of points for computing error.  Only constraints when
+                # both pointsre are in the group are considered.
+                group = line.strip().split()
+                self.chi2groups.append(tuple(group[1:]))
+                continue
 
             group = line.strip().split()
             print(group)
@@ -167,11 +175,6 @@ class TriangleSurvey:
                 error = float(group[4])
                 self.constraints[pair] = (length, error)
 
-            #if len(group) == 5:
-            #    self.triangles.append(group[0:3])
-            #    pair = self.constraint_label(group[1], group[2])
-            #    self.constraints[pair] = (length, 
-            #        self.current_fractional_error * length + self.current_absolute_error)
 
     def save(self, filename):
         with open(filename, 'w') as f:
@@ -364,7 +367,7 @@ class TriangleSurvey:
         con_labels.sort()
         print('constraint labels = ', con_labels)
         print('self.triangles = ', self.triangles)
-        
+
         point_labels = set()
         for c in con_labels:
             point_labels.add(c[0])
@@ -402,7 +405,7 @@ class TriangleSurvey:
                 points[p] = x[i:i+2]
                 i += 2
             return points
-            
+
         # Function to optimize
         def func(x): 
             points = x_to_points(x)
@@ -415,17 +418,48 @@ class TriangleSurvey:
                 con = self.constraints[k]
                 dy[i] = (con[0] - d1) / con[1]
 
-            print(np.sum(dy**2))
+            #print(np.sum(dy**2))
 
             return dy 
 
-        result = scipy.optimize.leastsq(func, x0)    
+        result = scipy.optimize.leastsq(func, x0)
         print(result)
 
         x = result[0]
         self.points = x_to_points(x)
 
+        chi2 = np.sum(func(x)**2)
+        print('number of constraints:       ', len(con_labels))
+        print('number of free variables:    ', len(x))
+        print('least squares solution chi2: ', chi2)
+        if (len(con_labels) - len(x)) > 0:
+          print('reduced chi2:                ', chi2 / (len(con_labels) - len(x)))
+        self.calc_local_chi2()
+
         return result
+
+    def calc_local_chi2(self):
+      for label_list in self.chi2groups:
+        print('local chi2 for labels: ', label_list)
+        chi2 = 0
+        num_variables = len(label_list) * 2 - 3
+        num_constraints = 0
+        for con_label in self.constraints.keys():
+          if (con_label[0] in label_list) and (con_label[1] in label_list):
+            num_constraints += 1
+            a = self.points[con_label[0]]
+            b = self.points[con_label[1]]
+            d1 = dist(a, b)
+            con = self.constraints[con_label]
+            extra_chi2 = (con[0] - d1)**2 / con[1]**2
+            print('   ', con_label, con, extra_chi2)
+            chi2 += extra_chi2
+        degrees_of_freedom = num_constraints - num_variables
+        print('    dof = ', degrees_of_freedom)
+        print('    chi2 = ', chi2)
+        if degrees_of_freedom > 0:
+          print('    reduced chi2 = ', chi2 / degrees_of_freedom)
+
 
     def write_points(self, filename='points.dat'):
         keys = list(self.points.keys())
@@ -442,7 +476,8 @@ class TriangleSurvey:
 
 def foo():
     ts = TriangleSurvey()
-    tag = 'survey2'
+    #tag = 'survey2'
+    tag = 'survey3'
     ts.load(tag+'.dat')
     ts.solve_triangles()
     ts.print_stats()
@@ -455,9 +490,9 @@ def foo():
     #print ts.calculate_closure(inner)
     #print ts.calculate_closure(outer)
 
-    mpl.figure(1)
+    fig, ax = mpl.subplots(1)
     ts.plot_triangles(color='r')
-    mpl.axes().set_aspect('equal', 'datalim')
+    ax.set_aspect('equal', 'datalim')
     mpl.xlabel('Easting (feet)')
     mpl.ylabel('Northing (feet)')
     mpl.savefig(tag+'_uncorrected.png')
@@ -467,14 +502,14 @@ def foo():
 
     res = ts.optimize_triangles()
     ts.write_points(tag+'_points_optimized.dat')
-    
+
     ts.plot_triangles(color='k')
-    mpl.axes().set_aspect('equal', 'datalim')
+    ax.set_aspect('equal', 'datalim')
     mpl.savefig(tag+'_both.png')
 
-    mpl.figure(2)
+    fig, ax = mpl.subplots(1)
     ts.plot_triangles(color='k', dx=1, dy=1)
-    mpl.axes().set_aspect('equal', 'datalim')
+    ax.set_aspect('equal', 'datalim')
     mpl.xlabel('Easting (feet)')
     mpl.ylabel('Northing (feet)')
     mpl.tight_layout()
@@ -496,6 +531,8 @@ def foo2():
             line = re.sub('100', num, line)
             f.write(line)
         f.close()
+
+
 
 
 if __name__ == "__main__":

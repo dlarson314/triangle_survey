@@ -1,0 +1,26 @@
+<control>
+
+# Labels for points making triangles, 
+# counter-clockwise as seen from above,
+# and in the order they will be computed.
+
+A B C
+B C D
+
+# Measurements in arbitrary units of length.  Units must be consistent
+# throughout the file. Order of lines is arbitrary, but should probably be in
+# the order the distances were measured.
+
+A B = 100
+B C = 100
+A C = 150
+B D = 140
+C D = 100
+A D = 100
+
+# Optionally consider these points as a separate group for computing additional
+# chi2 error statistics
+
+chi2 A B C D
+
+</control>
