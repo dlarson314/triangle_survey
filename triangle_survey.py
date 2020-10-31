@@ -148,7 +148,7 @@ class TriangleSurvey:
                 continue 
             if re.search('^chi2 ', line):
                 # Group of points for computing error.  Only constraints when
-                # both pointsre are in the group are considered.
+                # both points are in the group are considered.
                 group = line.strip().split()
                 self.chi2groups.append(tuple(group[1:]))
                 continue
