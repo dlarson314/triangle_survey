@@ -28,9 +28,11 @@ class TriangleError:
 
   def chi(self, x):
     deltas = np.zeros(3 + len(self.constraints), dtype='double')
-    deltas[0:2] = x[0:2] * 1e3
-    deltas[-1] = x[-1] * 1e3
-    i = 2
+    deltas[0] = np.sum(x[::2]) * 1000
+    deltas[1] = np.sum(x[1::2]) * 1000
+    deltas[2] = np.sum(x[0:-1:2] * x[1::2])
+    #deltas[-1] = x[-1] * 1e3
+    i = 3
     for key, value in self.constraints.items():
       index0 = key[0]
       index1 = key[1]
@@ -81,7 +83,7 @@ class TriangleError:
     w, v = np.linalg.eig(self.cov_x)
     print('w = ', w)
     #print(v)
-    index = 0
+    index = 1
     for row in range(2):
       for col in range(2):
         self.plot_constraints(self.x + scale * w[index] * v[:,index], color='r', ax=ax[row][col])
@@ -114,7 +116,7 @@ def foo2():
   te.load(triangles)
   te.debug()
   te.optimize()
-  te.plot_error(scale=100)
+  te.plot_error(scale=1000)
 
 
 def foo10():
