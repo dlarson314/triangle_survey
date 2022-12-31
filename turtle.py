@@ -192,3 +192,8 @@ class Turtle:
         self.y = self.points[name][1]
         self.heading = self.points[name][2]
 
+    def goto_xy(self, x, y, heading='N 00:00:00 E'):
+        self.x = x
+        self.y = y
+        self.heading = string_to_angle(heading)
+
